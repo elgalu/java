@@ -26,6 +26,9 @@ default['java']['arch'] = kernel['machine'] =~ /x86_64/ ? "x86_64" : "i586"
 default['java']['openjdk_packages'] = []
 default['java']['accept_license_agreement'] = false
 
+# better timeout max time
+default['java']['timeout'] = 3600 # in seconds
+
 case node['platform_family']
 when "windows"
   default['java']['install_flavor'] = "windows"

@@ -34,7 +34,9 @@ if platform_requires_license_acceptance?
 end
 
 node['java']['openjdk_packages'].each do |pkg|
-  package pkg
+  timeout(node['java']['timeout'].to_i) do
+    package pkg
+  end
 end
 
 if platform_family?('debian', 'rhel', 'fedora')
