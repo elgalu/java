@@ -17,6 +17,8 @@
 require 'chef/mixin/shell_out'
 include Chef::Mixin::ShellOut
 
+alternatives_cmd = determine_alternatives_cmd()
+
 action :set do
   if new_resource.bin_cmds
     new_resource.bin_cmds.each do |cmd|
@@ -31,12 +33,12 @@ action :set do
       end
 
       # install the alternative if needed
-      alternative_exists = shell_out("update-alternatives --display #{cmd} | grep #{alt_path}").exitstatus == 0
+      alternative_exists = shell_out("#{alternatives_cmd} --display #{cmd} | grep #{alt_path}").exitstatus == 0
       unless alternative_exists
         description = "Add alternative for #{cmd}"
         converge_by(description) do
           Chef::Log.debug "Adding alternative for #{cmd}"
-          install_cmd = shell_out("update-alternatives --install #{bin_path} #{cmd} #{alt_path} #{priority}")
+          install_cmd = shell_out("#{alternatives_cmd} --install #{bin_path} #{cmd} #{alt_path} #{priority}")
           unless install_cmd.exitstatus == 0
             Chef::Application.fatal!(%Q[ set alternative failed ])
           end
@@ -46,12 +48,12 @@ action :set do
 
       # set the alternative if default
       if new_resource.default
-        alternative_is_set = shell_out("update-alternatives --display #{cmd} | grep \"link currently points to #{alt_path}\"").exitstatus == 0
+        alternative_is_set = shell_out("#{alternatives_cmd} --display #{cmd} | grep \"link currently points to #{alt_path}\"").exitstatus == 0
         unless alternative_is_set
           description = "Set alternative for #{cmd}"
           converge_by(description) do
             Chef::Log.debug "Setting alternative for #{cmd}"
-            set_cmd = shell_out("update-alternatives --set #{cmd} #{alt_path}")
+            set_cmd = shell_out("#{alternatives_cmd} --set #{cmd} #{alt_path}")
             unless set_cmd.exitstatus == 0
               Chef::Application.fatal!(%Q[ set alternative failed ])
             end
@@ -66,7 +68,7 @@ end
 action :unset do
   new_resource.bin_cmds.each do |cmd|
     alt_path = "#{new_resource.java_location}/bin/#{cmd}"
-    cmd = shell_out("update-alternatives --remove #{cmd} #{alt_path}")
+    cmd = shell_out("#{alternatives_cmd} --remove #{cmd} #{alt_path}")
     if cmd.exitstatus == 0
       new_resource.updated_by_last_action(true)
     end

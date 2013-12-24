@@ -109,6 +109,10 @@ end
 
 class Chef
   class Recipe
+    def determine_alternatives_cmd
+      platform_family?('rhel') ? 'alternatives' : 'update-alternatives'
+    end
+
     def valid_ibm_jdk_uri?(url)
       url =~ ::URI::ABS_URI && %w[file http https].include?(::URI.parse(url).scheme)
     end
