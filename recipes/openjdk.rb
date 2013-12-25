@@ -19,6 +19,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+BETTER_TIMEOUT = node['java']['timeout'].to_i # TODO: use this
+
 jdk = Opscode::OpenJDK.new(node)
 java_location = jdk.java_location
 alternatives_priority = jdk.alternatives_priority
@@ -34,13 +36,18 @@ if platform_requires_license_acceptance?
 end
 
 node['java']['openjdk_packages'].each do |pkg|
-  timeout(node['java']['timeout'].to_i) do
-    package pkg
+  timeout(7200) do
+    package pkg do
+      # Monkey patch default 10mins to 1hour default timeout. Doing this outside doesn't fix it since chef has a recipe compile and copy process.
+      require 'mixlib/shellout'; module Mixlib; class ShellOut; DEFAULT_READ_TIMEOUT = 7200; end; end
+      action :install
+    end
   end
 end
 
 if platform_family?('debian', 'rhel', 'fedora')
   bash 'update-java-alternatives' do
+    timeout 7200
     code <<-EOH.gsub(/^\s+/, '')
       update-alternatives --install /usr/bin/java java #{java_location} #{alternatives_priority} && \
       update-alternatives --set java #{java_location}
